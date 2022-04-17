@@ -1,5 +1,7 @@
 import { initState } from './state'
 import { compileToFunction } from './compiler/index'
+import { mountComponent } from './lifycycle'
+
 export function initMixin(Vue) {
   Vue.prototype._init = function (options) {
     // 初始化 
@@ -36,6 +38,8 @@ export function initMixin(Vue) {
         options.render = render
       }
     }
+    // 挂载组件
+    mountComponent(vm, el)
 
   }
 }

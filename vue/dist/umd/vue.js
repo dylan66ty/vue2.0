@@ -21,6 +21,17 @@
     });
   }
 
+  function proxy(vm, source, key) {
+    Object.defineProperty(vm, key, {
+      get() {
+        return vm[source][key]
+      },
+      set(newVal) {
+        vm[source][key] = newVal;
+      }
+    });
+  }
+
   const originArrayMethods = Array.prototype;
   const arrayMethods = Object.create(originArrayMethods);
 
@@ -130,11 +141,16 @@
 
   }
 
+
   function initData(vm) {
     // 初始化数据
     let data = vm.$options.data;
     data = typeof data === 'function' ? data.call(vm) : data;
     vm._data = data;
+    // vm._data 代理到 vm上 
+    for (const key in data) {
+      proxy(vm, '_data', key);
+    }
     // 对象劫持
     observe(data);
   }
@@ -179,7 +195,7 @@
   }
   // 文本 3
   function charts(text) {
-    text = text.replace(/\s/g, '');
+    text = text.trim();
     if (text) {
       currentParent.children.push({
         text,
@@ -217,7 +233,7 @@
         }
       }
       let text;
-      if (textIndex > 0) {
+      if (textIndex >= 0) {
         text = html.substring(0, textIndex);
       }
       if (text) {
@@ -245,7 +261,7 @@
         advance(attr[0].length);
       }
       if (end) {
-        advance(end.length);
+        advance(end[0].length);
       }
       return match
     }
@@ -259,8 +275,13 @@
 
   // ast 用对象描述js语法的
 
+  // {{dawdad}}
+  const defaultTagRE = /\{\{((?:.|\r?\n)+?)\}\}/g;
+
+
   // 拼接属性字符串
   function genProps(attrs) {
+    if (!attrs) return undefined
     let arr = [];
     for (let i = 0; i < attrs.length; i++) {
       const attr = attrs[i];
@@ -280,12 +301,46 @@
     return `{${arr.join(',')}}`
   }
 
-  function generate(el) {
-    let code = `_c("${el.tag}",${genProps(el.attrs)})
-  
-  `;
-    return code
 
+  function convertTextExpr(text) {
+    const tokens = [];
+    let prevIndex = 0;
+    // 正则 lastIndex 问题
+    text.replace(defaultTagRE, (...args) => {
+      const target = args[0];
+      const expr = args[1].trim();
+      const startIndex = args[2];
+      const leftCode = text.substring(prevIndex, startIndex);
+      if (leftCode) {
+        tokens.push(`"${leftCode}"`);
+      }
+      tokens.push(`_s(${expr})`);
+      prevIndex = startIndex + target.length;
+    });
+    if (prevIndex !== 0) {
+      const rightCode = text.substring(prevIndex);
+      if (rightCode) {
+        tokens.push(`"${rightCode}"`);
+      }
+    }
+    if (tokens.length) {
+      return tokens.join('+')
+    } else {
+      return `_v("${text}")`
+    }
+  }
+
+  function generate(node) {
+    const children = node.children;
+    let code;
+    if (node.type === 1) {
+      code = `_c("${node.tag}",${genProps(node.attrs)},${children ? children.map(item => generate(item)) : ''})`;
+    } else if (node.type === 3) {
+      // a {{b}} c {{d}} -> _v(a + _s(b) + c + _s(d))
+      const text = node.text;
+      code = convertTextExpr(text);
+    }
+    return code
   }
 
   function compileToFunction(template) {
@@ -294,16 +349,55 @@
     // 2. ast 生成 render函数 <模板引擎>
     const code = generate(root);
     // _c('div',{id:'app'},_c('p', {} , _v(_s(name))))
-    console.log(root);
     console.log(code);
-    return function render() {
-
-    }
+    // 模板引擎实现
+    const codeWithStr = `with(this){ return ${code}}`;
+    const render = new Function(codeWithStr);
+    return render
   }
 
 
    // <div id="app" > </div>
    // root= { tag: 'div' , attrs: [], children: []}
+
+  class Watcher {
+    constructor(vm, exprOrFn, callback, options) {
+      this.vm = vm;
+      this.callback = callback;
+      this.options = options;
+      this.getter = exprOrFn;
+      this.get();
+    }
+    get() {
+      this.getter();
+    }
+
+  }
+
+  function lifycycleMixin(Vue) {
+    Vue.prototype._update = function (vnode) {
+
+    };
+  }
+
+
+  function mountComponent(vm, el) {
+    vm.$options;
+    vm.$el = el;
+    // watcher 渲染的
+    // vm._render 渲染出vnode _c _v _s
+    // vm._update vnode创建真实的dom  
+
+    // 渲染页面
+    let updateComponent = () => {
+      // 返回的是虚拟dom
+      vm._update(vm._render());
+    };
+
+    // 渲染watch true表示渲染watch
+    new Watcher(vm, updateComponent, () => { }, true);
+
+  }
 
   function initMixin(Vue) {
     Vue.prototype._init = function (options) {
@@ -341,8 +435,45 @@
           options.render = render;
         }
       }
+      // 挂载组件
+      mountComponent(vm, el);
 
     };
+  }
+
+  function createElement(tag, data, ...children) {
+    console.log(tag);
+    console.log(data);
+    console.log(children);
+  }
+
+
+  function createTextNode(text) {
+    console.log(text);
+  }
+
+  function renderMixin(Vue) {
+    // 创建元素
+    Vue.prototype._c = function () {
+      return createElement(...arguments)
+    };
+    // 创建文本
+    Vue.prototype._v = function (text) {
+      return createTextNode(text)
+    };
+    // JSON.stringify
+    Vue.prototype._s = function (val) {
+      return !val ? '' : (typeof val === 'object' ? JSON.stringify(val) : val)
+    };
+
+
+    // _c创建元素 _v创建文本 _s JSON.stringily
+    Vue.prototype._render = function () {
+      const vm = this;
+      const { render } = vm.$options;
+      render.call(vm);
+    };
+
   }
 
   function Vue(options) {
@@ -350,6 +481,8 @@
   }
 
   initMixin(Vue);
+  renderMixin(Vue);
+  lifycycleMixin(Vue);
 
   return Vue;
 

@@ -10,8 +10,6 @@ const startTagOpen = new RegExp(`^<${qnameCapture}`)
 const startTagClose = /^\s*(\/?)>/
 // 标签结尾 </div> div
 const endTag = new RegExp(`^<\\/${qnameCapture}[^>]*>`)
-// {{dawdad}}
-const defaultTagRE = /\{\{((?:.|\r?\n)+?)\}\}/g
 
 let root = null
 let currentParent = null // 表示当前父亲是谁
@@ -40,7 +38,7 @@ function start(tagName, attrs) {
 }
 // 文本 3
 function charts(text) {
-  text = text.replace(/\s/g, '')
+  text = text.trim()
   if (text) {
     currentParent.children.push({
       text,
@@ -78,7 +76,7 @@ export function parseHTML(html) {
       }
     }
     let text
-    if (textIndex > 0) {
+    if (textIndex >= 0) {
       text = html.substring(0, textIndex)
     }
     if (text) {
@@ -106,7 +104,7 @@ export function parseHTML(html) {
       advance(attr[0].length)
     }
     if (end) {
-      advance(end.length)
+      advance(end[0].length)
     }
     return match
   }

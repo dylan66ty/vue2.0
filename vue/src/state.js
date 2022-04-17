@@ -1,4 +1,5 @@
 import { observe } from './observe/index'
+import { proxy } from './utils/index'
 export function initState(vm) {
   const opts = vm.$options
   // $options{ props, data,watch,computed,methods...} 
@@ -32,11 +33,16 @@ function initMethods() {
 
 }
 
+
 function initData(vm) {
   // 初始化数据
   let data = vm.$options.data
   data = typeof data === 'function' ? data.call(vm) : data
   vm._data = data
+  // vm._data 代理到 vm上 
+  for (const key in data) {
+    proxy(vm, '_data', key)
+  }
   // 对象劫持
   observe(data)
 }
