@@ -324,7 +324,7 @@
       }
     }
     if (tokens.length) {
-      return tokens.join('+')
+      return `_v(${tokens.join('+')})`
     } else {
       return `_v("${text}")`
     }
@@ -349,7 +349,6 @@
     // 2. ast 生成 render函数 <模板引擎>
     const code = generate(root);
     // _c('div',{id:'app'},_c('p', {} , _v(_s(name))))
-    console.log(code);
     // 模板引擎实现
     const codeWithStr = `with(this){ return ${code}}`;
     const render = new Function(codeWithStr);
@@ -374,9 +373,59 @@
 
   }
 
+  function patch(oldVnode, vnode) {
+    // oldVnode 第一次是真实的标签。
+    // 递归创建真实的节点 替换到老的节点
+    // 判断是更新还是渲染
+    const isRealElement = oldVnode.nodeType;
+    if (isRealElement) {
+      const oldEle = oldVnode;
+      const parentEle = oldEle.parentNode;
+      const el = createEle(vnode);
+      parentEle.insertBefore(el, oldEle.nextSibling);
+      parentEle.removeChild(oldEle);
+    }
+  }
+
+  function createEle(vnode) {
+    const { tag, children, key, data, text } = vnode;
+    // 标签
+    if (typeof tag === 'string') {
+      vnode.el = document.createElement(tag);
+      updataProperties(vnode);
+      children.forEach(child => { // 递归创建节点
+        vnode.el.appendChild(createEle(child));
+      });
+      // 文本
+    } else {
+      vnode.el = document.createTextNode(vnode.text);
+    }
+    // 组件
+    return vnode.el
+  }
+
+  function updataProperties(vnode) {
+    let newProps = vnode.data || {};
+    let el = vnode.el;
+    for (let key in newProps) {
+      if (key === 'style') {
+        for (let styleName in newProps.style) {
+          el.style[styleName] = newProps.style[styleName];
+        }
+      } else if (key === 'class') {
+        el.className = newProps.class;
+      } else {
+        el.setAttribute(key, newProps[key]);
+      }
+    }
+
+  }
+
   function lifycycleMixin(Vue) {
     Vue.prototype._update = function (vnode) {
-
+      // vnode -> 真实的dom
+      const vm = this;
+      vm.$el = patch(vm.$el, vnode);
     };
   }
 
@@ -442,15 +491,28 @@
   }
 
   function createElement(tag, data, ...children) {
-    console.log(tag);
-    console.log(data);
-    console.log(children);
+    let key = data.key;
+    if (key) {
+      delete data.key;
+    }
+    return vnode(tag, data, key, children, undefined)
+
   }
 
 
   function createTextNode(text) {
-    console.log(text);
+    return vnode(undefined, undefined, undefined, undefined, text)
   }
+
+  function vnode(tag, data, key, children, text) {
+    return {
+      componentOptions: {},
+      tag, data, key, children, text
+    }
+  }
+
+  // template -> ast语法树 -> render函数 -> 虚拟dom -> 真实的dom
+  // update 新旧vnode patch 到真实的dom上
 
   function renderMixin(Vue) {
     // 创建元素
@@ -471,7 +533,8 @@
     Vue.prototype._render = function () {
       const vm = this;
       const { render } = vm.$options;
-      render.call(vm);
+      let vnode = render.call(vm);
+      return vnode
     };
 
   }

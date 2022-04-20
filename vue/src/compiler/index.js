@@ -52,7 +52,7 @@ function convertTextExpr(text) {
     }
   }
   if (tokens.length) {
-    return tokens.join('+')
+    return `_v(${tokens.join('+')})`
   } else {
     return `_v("${text}")`
   }
@@ -77,7 +77,6 @@ export function compileToFunction(template) {
   // 2. ast 生成 render函数 <模板引擎>
   const code = generate(root)
   // _c('div',{id:'app'},_c('p', {} , _v(_s(name))))
-  console.log(code)
   // 模板引擎实现
   const codeWithStr = `with(this){ return ${code}}`
   const render = new Function(codeWithStr)

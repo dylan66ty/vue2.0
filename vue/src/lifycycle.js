@@ -1,7 +1,10 @@
 import Watcher from './watcher'
+import { patch } from './vnode/patch'
 export function lifycycleMixin(Vue) {
   Vue.prototype._update = function (vnode) {
-
+    // vnode -> 真实的dom
+    const vm = this
+    vm.$el = patch(vm.$el, vnode)
   }
 }
 
