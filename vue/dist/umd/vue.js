@@ -32,6 +32,68 @@
     });
   }
 
+
+  const LIFECYCLE_HOOKS = [
+    'beforeCreate',
+    'created',
+    'beforeMount',
+    'mounted',
+    'beforeUpdate',
+    'updated',
+    'beforeDestory',
+    'destoryed'
+  ];
+
+  const strats = {};
+
+  LIFECYCLE_HOOKS.forEach(hook => {
+    strats[hook] = mergeHook;
+  });
+
+  function mergeHook(parentVal, childVal) {
+    if (childVal) {
+      if (parentVal) {
+        return parentVal.concat(childVal)
+      } else {
+        return [childVal]
+      }
+    } else {
+      return parentVal
+    }
+
+  }
+
+  function mergeOptions(parent, child) {
+    const options = {};
+    for (let key in parent) {
+      mergeField(key);
+    }
+
+    for (let key in child) {
+      if (!parent.hasOwnProperty(key)) {
+        mergeField(key);
+      }
+
+    }
+
+    // 默认的合并策略
+    function mergeField(key) {
+      if (strats[key]) {
+        return options[key] = strats[key](parent[key], child[key])
+      }
+      if (isObject(parent[key]) && isObject(child[key])) {
+        options[key] = { ...parent[key], ...child[key] };
+      } else if (child[key] == null) {
+        options[key] = parent[key];
+      } else {
+        options[key] = child[key];
+      }
+    }
+
+    return options
+
+  }
+
   const originArrayMethods = Array.prototype;
   const arrayMethods = Object.create(originArrayMethods);
 
@@ -273,8 +335,6 @@
     return root
   }
 
-  // ast 用对象描述js语法的
-
   // {{dawdad}}
   const defaultTagRE = /\{\{((?:.|\r?\n)+?)\}\}/g;
 
@@ -342,6 +402,9 @@
     }
     return code
   }
+
+  // ast 用对象描述js语法的
+
 
   function compileToFunction(template) {
     // 1. template 字符串截取 -> ast
@@ -436,7 +499,7 @@
     // watcher 渲染的
     // vm._render 渲染出vnode _c _v _s
     // vm._update vnode创建真实的dom  
-
+    callHook(vm, 'beforeMount');
     // 渲染页面
     let updateComponent = () => {
       // 返回的是虚拟dom
@@ -446,6 +509,17 @@
     // 渲染watch true表示渲染watch
     new Watcher(vm, updateComponent, () => { }, true);
 
+    callHook(vm, 'mounted');
+  }
+
+
+  function callHook(vm, hook) {
+    const handlers = vm.$options[hook];
+    if (handlers) {
+      for (let i = 0; i < handlers.length; i++) {
+        handlers[i].call(vm);
+      }
+    }
   }
 
   function initMixin(Vue) {
@@ -453,8 +527,11 @@
       // 初始化 
       const vm = this;
       vm.$options = options;
+      // 将用户传的和全局在做一个合并
+      vm.$options = mergeOptions(vm.constructor.options, options);
+      callHook(vm, 'beforeCreate');
       initState(vm);
-
+      callHook(vm, 'created');
 
       // el存在,实现挂载
       if (vm.$options.el) {
@@ -539,6 +616,19 @@
 
   }
 
+  function initGlobalApi(Vue) {
+    Vue.options = {};
+    Vue.mixin = function (mixin) {
+      // 如何实现两个对象的合并
+      this.options = mergeOptions(this.options, mixin);
+
+    };
+    // 生命周期合并策略 [beforeCreate,beforeCreate]
+
+
+
+  }
+
   function Vue(options) {
     this._init(options);
   }
@@ -546,6 +636,10 @@
   initMixin(Vue);
   renderMixin(Vue);
   lifycycleMixin(Vue);
+
+
+  //初始化全局的api
+  initGlobalApi(Vue);
 
   return Vue;
 

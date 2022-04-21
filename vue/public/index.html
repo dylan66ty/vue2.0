@@ -11,22 +11,41 @@
 <body>
   <div id="app" style="color:red;font-size:10px;" a='1'>
     1
-    <p>1{{name}}2{{name}}3{{name}}4{{age}}5{{age}}dadda</p>
+    <p>{{name}}</p>
     2
 
   </div>
   <script src="/dist/umd/vue.js"></script>
 
   <script>
+    Vue.mixin({
+      beforeCreate() {
+        console.log(this)
+      }
+    })
+    Vue.mixin({
+      beforeCreate() {
+        console.log(this)
+      }
+    })
     const vm = new Vue({
       el: '#app',
       data() {
         return {
-          name: 'dylan66ty',
+          name: {
+            name: 'dylan66ty'
+          },
           age: 18
         }
+      },
+      beforeCreate() {
+        console.log(this)
       }
     })
+
+
+
+
 
 
   </script>

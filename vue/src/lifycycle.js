@@ -15,7 +15,7 @@ export function mountComponent(vm, el) {
   // watcher 渲染的
   // vm._render 渲染出vnode _c _v _s
   // vm._update vnode创建真实的dom  
-
+  callHook(vm, 'beforeMount')
   // 渲染页面
   let updateComponent = () => {
     // 返回的是虚拟dom
@@ -25,5 +25,15 @@ export function mountComponent(vm, el) {
   // 渲染watch true表示渲染watch
   new Watcher(vm, updateComponent, () => { }, true)
 
+  callHook(vm, 'mounted')
 }
 
+
+export function callHook(vm, hook) {
+  const handlers = vm.$options[hook]
+  if (handlers) {
+    for (let i = 0; i < handlers.length; i++) {
+      handlers[i].call(vm)
+    }
+  }
+}

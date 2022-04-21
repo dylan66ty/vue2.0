@@ -1,14 +1,18 @@
 import { initState } from './state'
 import { compileToFunction } from './compiler/index'
-import { mountComponent } from './lifycycle'
+import { mountComponent, callHook } from './lifycycle'
+import { mergeOptions } from './utils/index'
 
 export function initMixin(Vue) {
   Vue.prototype._init = function (options) {
     // 初始化 
     const vm = this
     vm.$options = options
+    // 将用户传的和全局在做一个合并
+    vm.$options = mergeOptions(vm.constructor.options, options)
+    callHook(vm, 'beforeCreate')
     initState(vm)
-
+    callHook(vm, 'created')
 
     // el存在,实现挂载
     if (vm.$options.el) {
