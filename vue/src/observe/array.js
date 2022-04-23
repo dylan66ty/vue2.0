@@ -23,7 +23,7 @@ methods.forEach(method => {
       ob.observeArray(inserted) // 将新增的属性继续劫持
     }
 
-
+    ob.dep.notify()
 
     return result
   }

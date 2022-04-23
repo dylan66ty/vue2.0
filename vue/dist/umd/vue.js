@@ -119,7 +119,7 @@
         ob.observeArray(inserted); // 将新增的属性继续劫持
       }
 
-
+      ob.dep.notify();
 
       return result
     };
@@ -161,10 +161,13 @@
 
   class Observe {
     constructor(data) {
+      this.dep = new Dep();
       // 给每个劫持过的对象增加个this
       def(data, '__ob__', this);
       // 数组
       if (isArray(data)) {
+
+        this._type = 'array';
         // 避免对数组的索引进行劫持，提升性能
         // 数组里面的是对象在劫持
         // 数组的原型的上的一些方法重写 push pop unshift shift reserve sort splice
@@ -173,6 +176,7 @@
 
       } else {
         // 对象
+        this._type = 'object';
         this.walk(data);
       }
 
@@ -202,9 +206,8 @@
 
   function defineReactive(data, key, value) {
     const dep = new Dep();
-    console.log(dep);
     // 递归实现深度劫持
-    observe(value);
+    const childob = observe(value);
     // 缺点：1.数组length不能劫持 2.对象不存在的属性不能劫持
     Object.defineProperty(data, key, {
       get() {
@@ -212,6 +215,11 @@
         if (Dep.target) {
           // 如果当前有watcher wacher和dep建立关系 双向依赖
           dep.depend();
+          if (childob) {
+            // 收集孩子的相关依赖
+            childob.dep.depend();
+
+          }
 
         }
         return value
