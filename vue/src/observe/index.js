@@ -1,5 +1,6 @@
 import { isObject, isArray, def } from '../utils/index'
 import { arrayMethods } from './array'
+import Dep from '../dep'
 class Observe {
   constructor(data) {
     // 给每个劫持过的对象增加个this
@@ -42,19 +43,27 @@ export function observe(data) {
 }
 
 function defineReactive(data, key, value) {
+  const dep = new Dep()
+  console.log(dep)
   // 递归实现深度劫持
   observe(value)
   // 缺点：1.数组length不能劫持 2.对象不存在的属性不能劫持
   Object.defineProperty(data, key, {
     get() {
+      // 取值 每个属性都有对应的watcher name: [watcher,watcher ...]
+      if (Dep.target) {
+        // 如果当前有watcher wacher和dep建立关系 双向依赖
+        dep.depend()
+
+      }
       return value
     },
     set(newVal) {
       if (newVal === value) return
-      console.log('更新数据')
       // 如果newVal是个对象,需要劫持这个对象
       observe(newVal)
       value = newVal
+      dep.notify() // 通知watcher更新
     }
   })
 

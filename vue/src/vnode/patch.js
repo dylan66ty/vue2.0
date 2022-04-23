@@ -9,6 +9,7 @@ export function patch(oldVnode, vnode) {
     const el = createEle(vnode)
     parentEle.insertBefore(el, oldEle.nextSibling)
     parentEle.removeChild(oldEle)
+    return el
   }
 }
 

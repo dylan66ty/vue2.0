@@ -126,6 +126,39 @@
 
   });
 
+  let id$1 = 0;
+  class Dep {
+    constructor() {
+      this.id = id$1++;
+      this.subs = [];
+    }
+    depend() {
+      Dep.target.addDep(this); // 观察者模式
+      //this.subs.push(Dep.target)  
+    }
+    notify() {
+      this.subs.forEach(watcher => watcher.update());
+    }
+    addSub(watcher) {
+      this.subs.push(watcher);
+    }
+
+
+  }
+
+  // 计算属性依赖这个stack
+  const stack$1 = [];
+
+  function pushTarget(watcher) {
+    Dep.target = watcher;
+    stack$1.push(watcher);
+  }
+
+  function popTarget() {
+    stack$1.pop();
+    Dep.target = stack$1[stack$1.length - 1];
+  }
+
   class Observe {
     constructor(data) {
       // 给每个劫持过的对象增加个this
@@ -168,19 +201,27 @@
   }
 
   function defineReactive(data, key, value) {
+    const dep = new Dep();
+    console.log(dep);
     // 递归实现深度劫持
     observe(value);
     // 缺点：1.数组length不能劫持 2.对象不存在的属性不能劫持
     Object.defineProperty(data, key, {
       get() {
+        // 取值 每个属性都有对应的watcher name: [watcher,watcher ...]
+        if (Dep.target) {
+          // 如果当前有watcher wacher和dep建立关系 双向依赖
+          dep.depend();
+
+        }
         return value
       },
       set(newVal) {
         if (newVal === value) return
-        console.log('更新数据');
         // 如果newVal是个对象,需要劫持这个对象
         observe(newVal);
         value = newVal;
+        dep.notify(); // 通知watcher更新
       }
     });
 
@@ -422,16 +463,33 @@
    // <div id="app" > </div>
    // root= { tag: 'div' , attrs: [], children: []}
 
+  let id = 0;
   class Watcher {
     constructor(vm, exprOrFn, callback, options) {
       this.vm = vm;
       this.callback = callback;
       this.options = options;
       this.getter = exprOrFn;
-      this.get();
+      this.id = id++;
+      this.depsId = new Set();
+      this.deps = [];
+      this.get(); // 调用get方法会让渲染watcher执行。
     }
     get() {
-      this.getter();
+      pushTarget(this); // 把watcher存起来 Dep.target
+      this.getter(); // 渲染watch的执行 render 取值操作 -> 依赖收集
+      popTarget(); // 移除watcher  
+    }
+    update() {
+      this.get();
+    }
+    addDep(dep) { // watcher里不能放重复的dep dep里面也不能放重复的watcher
+      const id = dep.id;
+      if (!this.depsId.has(id)) {
+        this.depsId.add(id);
+        this.deps.push(dep);
+        dep.addSub(this);
+      }
     }
 
   }
@@ -447,6 +505,7 @@
       const el = createEle(vnode);
       parentEle.insertBefore(el, oldEle.nextSibling);
       parentEle.removeChild(oldEle);
+      return el
     }
   }
 
@@ -494,12 +553,13 @@
 
 
   function mountComponent(vm, el) {
+
     vm.$options;
     vm.$el = el;
+    callHook(vm, 'beforeMount');
     // watcher 渲染的
     // vm._render 渲染出vnode _c _v _s
     // vm._update vnode创建真实的dom  
-    callHook(vm, 'beforeMount');
     // 渲染页面
     let updateComponent = () => {
       // 返回的是虚拟dom
@@ -508,7 +568,6 @@
 
     // 渲染watch true表示渲染watch
     new Watcher(vm, updateComponent, () => { }, true);
-
     callHook(vm, 'mounted');
   }
 
