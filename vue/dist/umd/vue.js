@@ -484,11 +484,12 @@
    // <div id="app" > </div>
    // root= { tag: 'div' , attrs: [], children: []}
 
-  let callbacks = [];
+  const callbacks = [];
   let actived;
 
   function flashCallback() {
     callbacks.forEach(cb => cb());
+    callbacks.length = 0;
     actived = false;
   }
 
