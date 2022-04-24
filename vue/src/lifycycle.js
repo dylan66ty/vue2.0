@@ -19,6 +19,7 @@ export function mountComponent(vm, el) {
   // vm._update vnode创建真实的dom  
   // 渲染页面
   let updateComponent = () => {
+    console.log('update')
     // 返回的是虚拟dom
     vm._update(vm._render())
   }

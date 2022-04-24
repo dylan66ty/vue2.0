@@ -2,6 +2,7 @@ import { initState } from './state'
 import { compileToFunction } from './compiler/index'
 import { mountComponent, callHook } from './lifycycle'
 import { mergeOptions } from './utils/index'
+import { nextTick } from './utils/nextTick'
 
 export function initMixin(Vue) {
   Vue.prototype._init = function (options) {
@@ -46,5 +47,7 @@ export function initMixin(Vue) {
     mountComponent(vm, el)
 
   }
+
+  Vue.prototype.$nextTick = nextTick
 }
 

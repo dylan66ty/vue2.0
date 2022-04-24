@@ -40,6 +40,16 @@ class Observe {
   }
 }
 
+function dependArray(value) {
+  for (let i = 0; i < value.length; i++) {
+    const current = value[i] // 将数组中每一个都取出来，数据变化后也去更新视图
+    current.__ob__ && current.__ob__.dep.depend()
+    if (Array.isArray(current)) {
+      dependArray(current)
+    }
+  }
+}
+
 
 export function observe(data) {
   if (!isObject(data)) return
@@ -58,11 +68,13 @@ function defineReactive(data, key, value) {
         // 如果当前有watcher wacher和dep建立关系 双向依赖
         dep.depend()
         if (childob) {
-          // 收集孩子的相关依赖
+          // 数组的依赖收集
           childob.dep.depend()
-
+          // 如果数组中还有数组的情况下
+          if (Array.isArray(value)) {
+            dependArray(value)
+          }
         }
-
       }
       return value
     },
@@ -70,6 +82,7 @@ function defineReactive(data, key, value) {
       if (newVal === value) return
       // 如果newVal是个对象,需要劫持这个对象
       observe(newVal)
+
       value = newVal
       dep.notify() // 通知watcher更新
     }

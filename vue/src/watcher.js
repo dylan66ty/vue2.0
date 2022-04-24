@@ -1,4 +1,6 @@
 import { pushTarget, popTarget } from './dep.js'
+import { queueWatcher } from './observe/scheduler'
+
 let id = 0
 class Watcher {
   constructor(vm, exprOrFn, callback, options) {
@@ -17,7 +19,10 @@ class Watcher {
     popTarget() // 移除watcher  
   }
   update() {
-    this.get()
+    // 每次调用update都会更新。
+    // 优化 先把watcher存到队列中去 等同步代码执行完成后再依次执行
+    queueWatcher(this)
+    // this.get()
   }
   addDep(dep) { // watcher里不能放重复的dep dep里面也不能放重复的watcher
     const id = dep.id
@@ -27,8 +32,13 @@ class Watcher {
       dep.addSub(this)
     }
   }
+  run() {
+    this.get()
+  }
 
 }
+
+
 
 export default Watcher
 

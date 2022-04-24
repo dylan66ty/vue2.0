@@ -198,6 +198,16 @@
     }
   }
 
+  function dependArray(value) {
+    for (let i = 0; i < value.length; i++) {
+      const current = value[i]; // 将数组中每一个都取出来，数据变化后也去更新视图
+      current.__ob__ && current.__ob__.dep.depend();
+      if (Array.isArray(current)) {
+        dependArray(current);
+      }
+    }
+  }
+
 
   function observe(data) {
     if (!isObject(data)) return
@@ -216,11 +226,13 @@
           // 如果当前有watcher wacher和dep建立关系 双向依赖
           dep.depend();
           if (childob) {
-            // 收集孩子的相关依赖
+            // 数组的依赖收集
             childob.dep.depend();
-
+            // 如果数组中还有数组的情况下
+            if (Array.isArray(value)) {
+              dependArray(value);
+            }
           }
-
         }
         return value
       },
@@ -228,6 +240,7 @@
         if (newVal === value) return
         // 如果newVal是个对象,需要劫持这个对象
         observe(newVal);
+
         value = newVal;
         dep.notify(); // 通知watcher更新
       }
@@ -471,6 +484,47 @@
    // <div id="app" > </div>
    // root= { tag: 'div' , attrs: [], children: []}
 
+  let callbacks = [];
+  let actived;
+
+  function flashCallback() {
+    callbacks.forEach(cb => cb());
+    actived = false;
+  }
+
+
+
+  function nextTick(callback) {
+    callbacks.push(callback);
+    if (actived) return
+    actived = true;
+    setTimeout(flashCallback, 0);
+
+
+
+  }
+
+  let queue = [];
+  let has = {};
+
+  function flushSchedulerQueue() {
+    queue.forEach(watcher => watcher.run());
+    queue.length = 0;
+    has = {};
+  }
+
+  // 批量处理
+  function queueWatcher(watcher) {
+    const id = watcher.id;
+    if (has[id] == null) {
+      queue.push(watcher);
+      has[id] = true;
+      // vue.nextTick = promise mutaitionObserver setImmediate setTimeout
+      nextTick(flushSchedulerQueue);
+    }
+
+  }
+
   let id = 0;
   class Watcher {
     constructor(vm, exprOrFn, callback, options) {
@@ -489,7 +543,10 @@
       popTarget(); // 移除watcher  
     }
     update() {
-      this.get();
+      // 每次调用update都会更新。
+      // 优化 先把watcher存到队列中去 等同步代码执行完成后再依次执行
+      queueWatcher(this);
+      // this.get()
     }
     addDep(dep) { // watcher里不能放重复的dep dep里面也不能放重复的watcher
       const id = dep.id;
@@ -498,6 +555,9 @@
         this.deps.push(dep);
         dep.addSub(this);
       }
+    }
+    run() {
+      this.get();
     }
 
   }
@@ -570,6 +630,7 @@
     // vm._update vnode创建真实的dom  
     // 渲染页面
     let updateComponent = () => {
+      console.log('update');
       // 返回的是虚拟dom
       vm._update(vm._render());
     };
@@ -632,6 +693,8 @@
       mountComponent(vm, el);
 
     };
+
+    Vue.prototype.$nextTick = nextTick;
   }
 
   function createElement(tag, data, ...children) {
