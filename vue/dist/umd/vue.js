@@ -651,7 +651,7 @@
     }
   }
 
-  function initMixin(Vue) {
+  function initMixin$1(Vue) {
     Vue.prototype._init = function (options) {
       // 初始化 
       const vm = this;
@@ -747,15 +747,58 @@
 
   }
 
-  function initGlobalApi(Vue) {
-    Vue.options = {};
+  function initMixin(Vue) {
+
     Vue.mixin = function (mixin) {
       // 如何实现两个对象的合并
       this.options = mergeOptions(this.options, mixin);
 
     };
     // 生命周期合并策略 [beforeCreate,beforeCreate]
+  }
 
+  const ASSETS_TYPE = [
+    'component',
+    'filter',
+    'directive'
+  ];
+
+  function initAssetsRegisters(Vue) {
+    ASSETS_TYPE.forEach(type => {
+      Vue[type] = function (id, definition) {
+        if (type === 'component') {
+          // 注册全局组件
+          // 使用extend方法将对象变成构造函数
+          // 子组件可能也有Vue.component方法
+          definition = this.options._base.extend(definition);
+
+        }
+        this.options[type + 's'][id] = definition;
+      };
+    });
+
+  }
+
+  function initExtend(Vue) {
+    Vue.extend = function (extendOptions) {
+      // 创建子类继承于父类 扩展时候扩展到自己的属性上
+
+
+    };
+
+  }
+
+  function initGlobalApi(Vue) {
+    Vue.options = {};
+    // 初始化的全局过滤器 指令 组件 都放在Vue.options中
+    initMixin(Vue);
+    ASSETS_TYPE.forEach(type => {
+      Vue.options[type + 's'] = {};
+    });
+
+    Vue.options._base = Vue; // _base是Vue的构造函数
+    initExtend(Vue);
+    initAssetsRegisters(Vue);
 
 
   }
@@ -764,7 +807,7 @@
     this._init(options);
   }
 
-  initMixin(Vue);
+  initMixin$1(Vue);
   renderMixin(Vue);
   lifycycleMixin(Vue);
 

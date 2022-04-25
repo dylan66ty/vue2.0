@@ -11,10 +11,17 @@
 <body>
   <div id="app" style="color:red;font-size:100px;" a='1'>
     {{arr}}
+    <my-component></my-component>
   </div>
   <script src="/dist/umd/vue.js"></script>
 
   <script>
+
+
+    Vue.component('my-component', {
+      template: '<div>hello component</div>'
+    })
+
     const vm = new Vue({
       el: '#app',
       data() {
@@ -29,11 +36,6 @@
 
     vm.arr.push(2)
     vm.arr.push(3)
-    console.log(vm.$el.innerHTML)
-    vm.$nextTick(() => {
-      console.log(vm.$el.innerHTML)
-    })
-
 
 
 
