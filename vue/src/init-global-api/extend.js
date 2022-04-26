@@ -5,6 +5,7 @@ function initExtend(Vue) {
 
   }
 
+
 }
 
 export default initExtend
