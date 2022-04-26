@@ -4,11 +4,11 @@ import { createElement, createTextNode } from './vnode/create-element'
 export function renderMixin(Vue) {
   // 创建元素
   Vue.prototype._c = function () {
-    return createElement(...arguments)
+    return createElement(this, ...arguments)
   }
   // 创建文本
   Vue.prototype._v = function (text) {
-    return createTextNode(text)
+    return createTextNode(this, text)
   }
   // JSON.stringify
   Vue.prototype._s = function (val) {

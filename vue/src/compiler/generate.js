@@ -8,7 +8,7 @@ function genProps(attrs) {
   let arr = []
   for (let i = 0; i < attrs.length; i++) {
     const attr = attrs[i]
-    if (attr.name === 'style') {
+    if (attr.name === 'style' && typeof attr.value === 'string') {
       const styleObj = attr.value.split(';').reduce((a, v) => {
         const [styleKey, styleValue] = v.split(':')
         if (styleKey) {

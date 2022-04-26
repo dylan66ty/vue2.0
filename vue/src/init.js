@@ -37,11 +37,10 @@ export function initMixin(Vue) {
         // template 转换成render函数
         // 1.0 纯字符串 正则匹配 (性能不高)
         // 2.0 vnode dom diff 
-
-        // 模板编译 htmlStr->ast->render函数
-        const render = compileToFunction(template)
-        options.render = render
       }
+      // 模板编译 htmlStr->ast->render函数
+      const render = compileToFunction(template)
+      options.render = render
     }
     // 挂载组件
     mountComponent(vm, el)

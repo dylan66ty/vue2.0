@@ -10,7 +10,8 @@
 
 <body>
   <div id="app" style="color:red;font-size:100px;" a='1'>
-    {{arr}}
+    <div>{{arr}}</div>
+    <my-component></my-component>
     <my-component></my-component>
   </div>
   <script src="/dist/umd/vue.js"></script>
@@ -31,11 +32,10 @@
       }
     })
 
+    console.log(vm)
 
 
 
-    vm.arr.push(2)
-    vm.arr.push(3)
 
 
 
