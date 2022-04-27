@@ -15,7 +15,7 @@
   // 向一个对象添加不可枚举的属性
   function def(data, key, value) {
     Object.defineProperty(data, key, {
-      configurable: false,
+      configurable: true,
       enumerable: false,
       value
     });
@@ -54,7 +54,7 @@
     const res = Object.create(parentVal);
     // child组件先找自身的 再找parent 
     if (childVal) {
-      for (let key in child) {
+      for (let key in childVal) {
         res[key] = childVal[key];
       }
     }
@@ -108,7 +108,7 @@
   }
 
   function isReservedTag(tagName) {
-    const tagStr = 'div,p,span,input';
+    const tagStr = 'div,p,span,input,ul,li';
     const obj = {};
     tagStr.split(',').forEach(tag => {
       obj[tag] = true;
@@ -415,8 +415,11 @@
     function advance(n) {
       html = html.substring(n);
     }
-
-    return root
+    let _root = root;
+    root = null;
+    currentParent = null;
+    stack.length = 0;
+    return _root
   }
 
   // {{dawdad}}
@@ -425,11 +428,10 @@
 
   // 拼接属性字符串
   function genProps(attrs) {
-    if (!attrs) return undefined
     let arr = [];
     for (let i = 0; i < attrs.length; i++) {
       const attr = attrs[i];
-      if (attr.name === 'style' && typeof attr.value === 'string') {
+      if (attr.name === 'style') {
         const styleObj = attr.value.split(';').reduce((a, v) => {
           const [styleKey, styleValue] = v.split(':');
           if (styleKey) {
@@ -495,7 +497,6 @@
     const root = parseHTML(template);
     // 2. ast 生成 render函数 <模板引擎>
     const code = generate(root);
-    console.log(code);
     // _c('div',{id:'app'},_c('p', {} , _v(_s(name))))
     // 模板引擎实现
     const codeWithStr = `with(this){ return ${code}}`;
@@ -591,9 +592,8 @@
     // 递归创建真实的节点 替换到老的节点
     // 判断是更新还是渲染
     if (!oldVnode) {
-      // 这个是组件的挂载 vm.$mount()
-      console.log(vnode);
-
+      // 通过当前的虚拟节点创建的元素并返回
+      return createEle(vnode)
     } else {
       const isRealElement = oldVnode.nodeType;
       if (isRealElement) {
@@ -611,9 +611,15 @@
   function createComponent$1(vnode) {
     // 需要创建组件的实例 初始化的作用
     const data = vnode.data;
-    if (data.hook && data.hook.init) {
-      data.hook.init(vnode);
+    const hook = data.hook;
+    if (hook && hook.init) {
+      hook.init(vnode);
     }
+    if (vnode.componentInstance) {
+      // 组件
+      return vnode.componentInstance.$el
+    }
+
   }
 
   function createEle(vnode) {
@@ -622,9 +628,10 @@
     if (typeof tag === 'string') {
       // tag是普通标签还是组件
       // 实例化组件
-      if (createComponent$1(vnode)) {
+      const el = createComponent$1(vnode);
+      if (el) {
         // 这里返回真实的element
-        return
+        return el
       }
       vnode.el = document.createElement(tag);
       updataProperties(vnode);
@@ -850,15 +857,16 @@
   function initExtend(Vue) {
     let cid = 0;
     Vue.extend = function (extendOptions) {
+
       // 创建子类继承于父类 扩展时候扩展到自己的属性上
       const Sub = function VueComponent(options) {
         this._init(options);
       };
-      Sub.cid = cid += 1;
+      Sub.cid = cid++;
       Sub.prototype = Object.create(this.prototype);
       Sub.prototype.constructor = Sub;
       Sub.options = mergeOptions(this.options, extendOptions);
-      Sub.mixin = this.mixin;
+      // Sub.mixin = this.mixin
 
 
       return Sub

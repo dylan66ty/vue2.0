@@ -10,7 +10,7 @@ export function isArray(data) {
 // 向一个对象添加不可枚举的属性
 export function def(data, key, value) {
   Object.defineProperty(data, key, {
-    configurable: false,
+    configurable: true,
     enumerable: false,
     value
   })
@@ -49,7 +49,7 @@ function mergeAssets(parentVal, childVal) {
   const res = Object.create(parentVal)
   // child组件先找自身的 再找parent 
   if (childVal) {
-    for (let key in child) {
+    for (let key in childVal) {
       res[key] = childVal[key]
     }
   }
@@ -103,7 +103,7 @@ export function mergeOptions(parent, child) {
 }
 
 export function isReservedTag(tagName) {
-  const tagStr = 'div,p,span,input'
+  const tagStr = 'div,p,span,input,ul,li'
   const obj = {}
   tagStr.split(',').forEach(tag => {
     obj[tag] = true

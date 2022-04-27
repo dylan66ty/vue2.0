@@ -4,11 +4,10 @@ const defaultTagRE = /\{\{((?:.|\r?\n)+?)\}\}/g
 
 // 拼接属性字符串
 function genProps(attrs) {
-  if (!attrs) return undefined
   let arr = []
   for (let i = 0; i < attrs.length; i++) {
     const attr = attrs[i]
-    if (attr.name === 'style' && typeof attr.value === 'string') {
+    if (attr.name === 'style') {
       const styleObj = attr.value.split(';').reduce((a, v) => {
         const [styleKey, styleValue] = v.split(':')
         if (styleKey) {

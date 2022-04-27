@@ -10,7 +10,6 @@ export function compileToFunction(template) {
   const root = parseHTML(template)
   // 2. ast 生成 render函数 <模板引擎>
   const code = generate(root)
-  console.log(code)
   // _c('div',{id:'app'},_c('p', {} , _v(_s(name))))
   // 模板引擎实现
   const codeWithStr = `with(this){ return ${code}}`

@@ -3,9 +3,8 @@ export function patch(oldVnode, vnode) {
   // 递归创建真实的节点 替换到老的节点
   // 判断是更新还是渲染
   if (!oldVnode) {
-    // 这个是组件的挂载 vm.$mount()
-    console.log(vnode)
-
+    // 通过当前的虚拟节点创建的元素并返回
+    return createEle(vnode)
   } else {
     const isRealElement = oldVnode.nodeType
     if (isRealElement) {
@@ -23,9 +22,15 @@ export function patch(oldVnode, vnode) {
 function createComponent(vnode) {
   // 需要创建组件的实例 初始化的作用
   const data = vnode.data
-  if (data.hook && data.hook.init) {
-    data.hook.init(vnode)
+  const hook = data.hook
+  if (hook && hook.init) {
+    hook.init(vnode)
   }
+  if (vnode.componentInstance) {
+    // 组件
+    return vnode.componentInstance.$el
+  }
+
 }
 
 function createEle(vnode) {
@@ -34,9 +39,10 @@ function createEle(vnode) {
   if (typeof tag === 'string') {
     // tag是普通标签还是组件
     // 实例化组件
-    if (createComponent(vnode)) {
+    const el = createComponent(vnode)
+    if (el) {
       // 这里返回真实的element
-      return
+      return el
     }
     vnode.el = document.createElement(tag)
     updataProperties(vnode)

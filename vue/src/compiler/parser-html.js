@@ -112,6 +112,9 @@ export function parseHTML(html) {
   function advance(n) {
     html = html.substring(n)
   }
-
-  return root
+  let _root = root
+  root = null
+  currentParent = null
+  stack.length = 0
+  return _root
 }
