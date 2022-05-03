@@ -9,54 +9,15 @@
 </head>
 
 <body>
-  <div id="app" style="color:red;font-size:100px;" a='1'>
-    <ul>
-      <li>{{arr}}</li>
-    </ul>
-    <my-component></my-component>
-    <my-component></my-component>
-    <my-component></my-component>
-  </div>
+
   <script src="/dist/umd/vue.js"></script>
 
-  <script>
-
-
-    Vue.component('my-component', {
-      template: '<div> hello component </div>'
-    })
-    Vue.component('my-component1', {
-      template: '<div> hello component1 </div>'
-    })
-
-    const vm = new Vue({
-      el: '#app',
-      components: {
-        'my': {
-          template: '<div>my<son></son></div>',
-          components: {
-            son: {
-              template: '<div>son</div>'
-            }
-          }
-        }
-      },
-      data() {
-        return {
-          arr: [1],
-        }
-      }
-    })
-
-    console.log(vm)
 
 
 
 
 
 
-
-  </script>
 
 </body>
 

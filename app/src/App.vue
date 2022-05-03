@@ -1,22 +1,19 @@
 <template>
   <div id="app">
-    <my></my>
-    <my></my>
-    <my></my>
-    <my1></my1>
-    <my1></my1>
-    <my1></my1>
+    <canvas id="canvas"></canvas>
   </div>
 </template>
 <script>
+import QRCode from 'qrcode'
 export default {
-  components: {
-    my1: {
-      render() {
-        console.log(this.$vnode)
-        return <div>my1</div>
-      }
-    }
+  components: {},
+  mounted() {
+    var canvas = document.getElementById('canvas')
+
+    QRCode.toCanvas(canvas, '我爱小宝❤', function (error) {
+      if (error) console.error(error)
+      console.log('success!')
+    })
   }
 }
 </script>

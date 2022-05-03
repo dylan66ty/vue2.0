@@ -603,6 +603,21 @@
         parentEle.insertBefore(el, oldEle.nextSibling);
         parentEle.removeChild(oldEle);
         return el
+      } else {
+        // 1. 标签不一致直接替换
+        if (oldVnode.tag !== vnode.tag) {
+          oldVnode.el.parentNode.replaceChild(createEle(vnode), oldVnode.el);
+        }
+
+        // 2.文本
+        if (!oldVnode.tag) {
+          if (oldVnode.text !== vnode.text) {
+            oldVnode.el.textContent = vnode.text;
+          }
+        }
+        // 3.标签一致而且不是文本（比对属性是否一致）
+        vnode.el = oldVnode.el;
+        updataProperties(vnode, oldVnode.data);
       }
     }
 
@@ -646,9 +661,24 @@
     return vnode.el
   }
 
-  function updataProperties(vnode) {
+  function updataProperties(vnode, oldProps = {}) {
     let newProps = vnode.data || {};
     let el = vnode.el;
+    let newStyle = newProps.style || {};
+    let oldStyle = oldProps.style || {};
+
+    for (let oldStyleName in oldStyle) {
+      if (!newStyle[oldStyleName]) {
+        el.style[oldStyleName] = '';
+      }
+    }
+
+    // 老的有 新的没有 直接把老的属性删除
+    for (let key in oldProps) {
+      if (!newProps[key]) {
+        el.removeAttribute(key);
+      }
+    }
     for (let key in newProps) {
       if (key === 'style') {
         for (let styleName in newProps.style) {
@@ -902,6 +932,29 @@
 
   //初始化全局的api
   initGlobalApi(Vue);
+  const vm1 = new Vue({
+    data: {
+      name: 'vm1'
+    }
+  });
+  const render1 = compileToFunction('<div id="app" style="color:red;background:red;">{{name}}</div>');
+  const vnode1 = render1.call(vm1);
+  const el1 = createEle(vnode1);
+  document.body.appendChild(el1);
+
+  const vm2 = new Vue({
+    data: {
+      name: 'vm2'
+    }
+  });
+  const render2 = compileToFunction('<div id="app1" style="color:blue;">{{name}}</div>');
+  const vnode2 = render2.call(vm2);
+
+  setTimeout(() => {
+    patch(vnode1, vnode2);
+
+  }, 1000);
+  // 1. diff算法的特点 平级比对 o(n)
 
   return Vue;
 
