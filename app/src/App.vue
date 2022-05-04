@@ -6,7 +6,6 @@
 <script>
 import QRCode from 'qrcode'
 export default {
-  components: {},
   mounted() {
     var canvas = document.getElementById('canvas')
 

@@ -616,8 +616,27 @@
           }
         }
         // 3.标签一致而且不是文本（比对属性是否一致）
-        vnode.el = oldVnode.el;
+        const el = vnode.el = oldVnode.el;
         updataProperties(vnode, oldVnode.data);
+
+        // 4.比对儿子
+        let oldChildren = oldVnode.children || [];
+        let newChildren = vnode.children || [];
+
+        if (oldChildren.length > 0 && newChildren.length > 0) {
+          // 老的新的都有孩子
+          // diff
+          updateChildren(el, oldChildren, newChildren);
+        } else if (newChildren.length > 0) {
+          // 新的有孩子 老的没孩子 新增
+          for (let i = 0; i < newChildren.length; i++) {
+            let child = newChildren[i];
+            el.appendChild(createEle(child));
+          }
+        } else if (oldChildren.length > 0) {
+          // 新的没有孩子 老的有孩子
+          el.innerHTML = '';
+        } else ;
       }
     }
 
@@ -634,6 +653,59 @@
       // 组件
       return vnode.componentInstance.$el
     }
+
+  }
+
+  function isSameVnode(oldVnode, newVnode) {
+    return (oldVnode.tag === newVnode.tag) && (oldVnode.key === newVnode.key)
+  }
+
+  // vue diff core
+  function updateChildren(parent, oldChildren, newChildren) {
+    // vue采用的是双指针的方式 
+
+    let oldStartIndex = 0;
+    let oldStartVnode = oldChildren[oldStartIndex];
+    let oldEndIndex = oldChildren.length - 1;
+    let oldEndVnode = oldChildren[oldEndIndex];
+
+    let newStartIndex = 0;
+    let newStartVnode = newChildren[newStartIndex];
+    let newEndIndex = newChildren.length - 1;
+    let newEndVnode = newChildren[newEndIndex];
+
+
+    while (oldStartIndex <= oldEndIndex && newStartIndex <= newEndIndex) {
+      // 有一方指针先重合就结束
+      if (isSameVnode(oldStartVnode, newStartVnode)) {
+        // 1.头和头相同
+        patch(oldStartVnode, newStartVnode);
+        oldStartVnode = oldChildren[++oldStartIndex];
+        newStartVnode = newChildren[++newStartIndex];
+      } else if (isSameVnode(oldEndVnode, newEndVnode)) {
+        // 2.尾和尾相同
+        patch(oldEndVnode, newEndVnode);
+        oldEndVnode = oldChildren[--oldEndIndex];
+        newEndVnode = newChildren[--newEndIndex];
+      }
+
+
+
+    }
+
+    if (newStartIndex <= newEndIndex) {
+      // 将新增的元素直接插入
+      for (let i = newStartIndex; i <= newEndIndex; i++) {
+        // parent.appendChild(createEle(newChildren[i]))
+        const target = newChildren[newEndIndex + 1] == null ? null : newChildren[newEndIndex + 1].el;
+        parent.insertBefore(createEle(newChildren[i]), target);
+      }
+
+    }
+
+
+
+
 
   }
 
@@ -937,7 +1009,12 @@
       name: 'vm1'
     }
   });
-  const render1 = compileToFunction('<div id="app" style="color:red;background:red;">{{name}}</div>');
+  const render1 = compileToFunction(`<div id="app">
+   <div key="A" style="background:red;">A</div>
+   <div key="B" style="background:yellow;">B</div>
+   <div key="C" style="background:blue;">C</div>
+   <div key="D" style="background:green;">D</div>
+</div>`);
   const vnode1 = render1.call(vm1);
   const el1 = createEle(vnode1);
   document.body.appendChild(el1);
@@ -947,7 +1024,13 @@
       name: 'vm2'
     }
   });
-  const render2 = compileToFunction('<div id="app1" style="color:blue;">{{name}}</div>');
+  const render2 = compileToFunction(`<div id="app">
+   <div  key="A" style="background:red;">A</div>
+   <div  key="B" style="background:yellow;">B</div>
+   <div  key="C" style="background:blue;">C</div>
+   <div  key="D" style="background:green;">D</div>
+   <div  key="E" style="background:green;">E</div>
+</div>`);
   const vnode2 = render2.call(vm2);
 
   setTimeout(() => {

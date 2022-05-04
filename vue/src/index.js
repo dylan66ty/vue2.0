@@ -25,7 +25,12 @@ const vm1 = new Vue({
     name: 'vm1'
   }
 })
-const render1 = compileToFunction('<div id="app" style="color:red;background:red;">{{name}}</div>')
+const render1 = compileToFunction(`<div id="app">
+   <div key="A" style="background:red;">A</div>
+   <div key="B" style="background:yellow;">B</div>
+   <div key="C" style="background:blue;">C</div>
+   <div key="D" style="background:green;">D</div>
+</div>`)
 const vnode1 = render1.call(vm1)
 const el1 = createEle(vnode1)
 document.body.appendChild(el1)
@@ -35,7 +40,13 @@ const vm2 = new Vue({
     name: 'vm2'
   }
 })
-const render2 = compileToFunction('<div id="app1" style="color:blue;">{{name}}</div>')
+const render2 = compileToFunction(`<div id="app">
+   <div  key="A" style="background:red;">A</div>
+   <div  key="B" style="background:yellow;">B</div>
+   <div  key="C" style="background:blue;">C</div>
+   <div  key="D" style="background:green;">D</div>
+   <div  key="E" style="background:green;">E</div>
+</div>`)
 const vnode2 = render2.call(vm2)
 
 setTimeout(() => {
