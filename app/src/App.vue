@@ -6,14 +6,23 @@
       @mouseleave.native="handleMouseLeave"
       >Button
     </el-button>
+
+    <About :message="message" @change="onChange" />
   </div>
 </template>
 <script>
 import { DatePicker } from 'element-ui'
 import Vue from 'vue'
+import About from './About.vue'
+
 export default {
+  components: {
+    About
+  },
   data() {
-    return {}
+    return {
+      message: 'Hello About'
+    }
   },
   mounted() {
     const Ctor = Vue.extend(DatePicker)
@@ -32,8 +41,6 @@ export default {
     instance.$refs.reference.$el = this.$refs.btn.$el
     instance.mountPicker()
     this.instance = instance
-    console.log(instance)
-
     instance.picker.$el.addEventListener('mouseenter', () => {
       this.handleMouseEnter()
     })
@@ -51,6 +58,9 @@ export default {
       this.timer = setTimeout(() => {
         this.instance.hidePicker()
       }, 100)
+    },
+    onChange() {
+      this.message = '123'
     }
   }
 }
